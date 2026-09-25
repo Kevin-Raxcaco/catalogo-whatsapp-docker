@@ -411,15 +411,19 @@ function renderProductsTab(el, products) {
 
   const hasCategory    = products.some(p => p.category)
   const hasDescription = products.some(p => p.description)
+  const PER_PAGE       = 50
+  let searchQuery      = ''
+  let currentPage      = 1
 
   el.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
-      <p style="margin:0;font-size:13px;color:var(--color-text-muted);">
-        ${products.length} producto${products.length !== 1 ? 's' : ''}
-      </p>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+      <input id="admin-product-search" type="search" placeholder="Buscar productos…"
+        style="flex:1;min-width:200px;padding:8px 14px;border-radius:10px;
+        border:1.5px solid var(--color-border);background:var(--color-bg);
+        color:var(--color-text);font-size:13px;outline:none;">
       <button class="btn btn--ghost btn--sm" id="go-upload-refresh">Reimportar →</button>
     </div>
-    <div style="overflow-x:auto;border-radius:14px;border:1.5px solid var(--color-border);">
+    <div id="products-table-wrap" style="overflow-x:auto;border-radius:14px;border:1.5px solid var(--color-border);">
       <table class="table" style="margin:0;">
         <thead>
           <tr>
@@ -431,33 +435,86 @@ function renderProductsTab(el, products) {
             <th>Precio</th>
           </tr>
         </thead>
-        <tbody>
-          ${products.map(p => `
-            <tr>
-              <td style="padding:8px 12px;">
-                ${p.image
-                  ? `<img src="${p.image}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:10px;display:block;">`
-                  : `<div style="width:44px;height:44px;border-radius:10px;background:var(--color-bg-subtle);
-                      display:flex;align-items:center;justify-content:center;font-size:20px;">📦</div>`
-                }
-              </td>
-              <td style="font-weight:600;">${escHtml(p.name ?? '')}</td>
-              <td style="color:var(--color-text-muted);font-size:13px;">${escHtml(p.sku ?? '') || '—'}</td>
-              ${hasCategory ? `<td><span style="font-size:12px;padding:3px 10px;border-radius:20px;
-                background:var(--color-bg-subtle);color:var(--color-text-muted);">${escHtml(p.category ?? '') || '—'}</span></td>` : ''}
-              ${hasDescription ? `<td style="font-size:13px;color:var(--color-text-muted);max-width:200px;
-                overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(p.description ?? '') || '—'}</td>` : ''}
-              <td style="font-weight:600;">${escHtml(p.price ?? '') || '—'}</td>
-            </tr>
-          `).join('')}
-        </tbody>
+        <tbody id="products-tbody"></tbody>
       </table>
     </div>
+    <div id="admin-pagination" style="margin-top:12px;"></div>
   `
 
   el.querySelector('#go-upload-refresh').addEventListener('click', () => {
     document.querySelector('.detail-tabs__tab[data-tab="upload"]')?.click()
   })
+
+  function getFiltered() {
+    if (!searchQuery) return products
+    const q = searchQuery.toLowerCase()
+    return products.filter(p =>
+      (p.name        ?? '').toLowerCase().includes(q) ||
+      (p.category    ?? '').toLowerCase().includes(q) ||
+      (p.sku         ?? '').toLowerCase().includes(q) ||
+      (p.description ?? '').toLowerCase().includes(q)
+    )
+  }
+
+  function renderTable() {
+    const filtered   = getFiltered()
+    const totalPages = Math.ceil(filtered.length / PER_PAGE) || 1
+    const page       = Math.min(currentPage, totalPages)
+    const slice      = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE)
+
+    const tbody = el.querySelector('#products-tbody')
+    if (!slice.length) {
+      tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:32px;
+        color:var(--color-text-muted);">Sin resultados para "${escHtml(searchQuery)}"</td></tr>`
+    } else {
+      tbody.innerHTML = slice.map(p => `
+        <tr>
+          <td style="padding:8px 12px;">
+            ${p.image
+              ? `<img src="${p.image}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:10px;display:block;">`
+              : `<div style="width:44px;height:44px;border-radius:10px;background:var(--color-bg-subtle);
+                  display:flex;align-items:center;justify-content:center;font-size:20px;">📦</div>`
+            }
+          </td>
+          <td style="font-weight:600;">${escHtml(p.name ?? '')}</td>
+          <td style="color:var(--color-text-muted);font-size:13px;">${escHtml(p.sku ?? '') || '—'}</td>
+          ${hasCategory ? `<td><span style="font-size:12px;padding:3px 10px;border-radius:20px;
+            background:var(--color-bg-subtle);color:var(--color-text-muted);">${escHtml(p.category ?? '') || '—'}</span></td>` : ''}
+          ${hasDescription ? `<td style="font-size:13px;color:var(--color-text-muted);max-width:200px;
+            overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(p.description ?? '') || '—'}</td>` : ''}
+          <td style="font-weight:600;">${escHtml(p.price ?? '') || '—'}</td>
+        </tr>`).join('')
+    }
+
+    const pager = el.querySelector('#admin-pagination')
+    if (totalPages <= 1) {
+      pager.innerHTML = `<p style="font-size:12px;color:var(--color-text-muted);margin:0;">
+        ${filtered.length} producto${filtered.length !== 1 ? 's' : ''}</p>`
+    } else {
+      const start = (page - 1) * PER_PAGE + 1
+      const end   = Math.min(page * PER_PAGE, filtered.length)
+      pager.innerHTML = `
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <span style="font-size:12px;color:var(--color-text-muted);">
+            ${start}–${end} de ${filtered.length} productos
+          </span>
+          <div style="display:flex;gap:6px;margin-left:auto;">
+            <button class="btn btn--ghost btn--sm" id="ap-prev" ${page <= 1 ? 'disabled' : ''}>← Anterior</button>
+            <button class="btn btn--ghost btn--sm" id="ap-next" ${page >= totalPages ? 'disabled' : ''}>Siguiente →</button>
+          </div>
+        </div>`
+      pager.querySelector('#ap-prev')?.addEventListener('click', () => { currentPage--; renderTable() })
+      pager.querySelector('#ap-next')?.addEventListener('click', () => { currentPage++; renderTable() })
+    }
+  }
+
+  el.querySelector('#admin-product-search').addEventListener('input', (e) => {
+    searchQuery = e.target.value.trim()
+    currentPage = 1
+    renderTable()
+  })
+
+  renderTable()
 }
 
 // ─── Tab: Upload ─────────────────────────────────────────────────────────────

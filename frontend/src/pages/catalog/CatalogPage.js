@@ -50,26 +50,89 @@ export async function CatalogPage(container) {
       </div>
     </div>
 
+    <div style="padding:0 0 12px;">
+      <input id="catalog-search" type="search" placeholder="Buscar productos…"
+        style="width:100%;box-sizing:border-box;padding:10px 16px;border-radius:12px;
+        border:1.5px solid var(--color-border);background:var(--color-bg);
+        color:var(--color-text);font-size:14px;outline:none;">
+    </div>
+
     ${hasCategories ? `
     <div class="category-tabs" id="category-tabs">
       <button class="category-tab category-tab--active" data-cat="all">Todos</button>
       ${categories.map(c => `<button class="category-tab" data-cat="${c}">${c}</button>`).join('')}
     </div>` : ''}
 
-    <div class="grid auto-fill-220 gap-16" id="products-grid" style="padding-bottom:100px;"></div>
+    <div class="grid auto-fill-220 gap-16" id="products-grid" style="padding-bottom:16px;"></div>
+    <div id="catalog-pagination" style="padding-bottom:100px;"></div>
   `
 
-  const currency = catalog.field_config?.currency ?? null
-  const modal    = new ProductModal(currency)
-  const grid     = container.querySelector('#products-grid')
+  const currency    = catalog.field_config?.currency ?? null
+  const modal       = new ProductModal(currency)
+  const grid        = container.querySelector('#products-grid')
+  const searchInput = container.querySelector('#catalog-search')
+  const PER_PAGE    = 50
+  let searchQuery   = ''
+  let currentPage   = 1
 
-  function renderGrid(cat) {
-    const filtered = cat === 'all' ? productList : productList.filter(p => p.category === cat)
-    grid.innerHTML = ''
-    filtered.forEach(p => grid.appendChild(ProductCard(p, (product) => modal.open(product), currency)))
+  function getFiltered() {
+    let list = activeCategory === 'all' ? productList : productList.filter(p => p.category === activeCategory)
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase()
+      list = list.filter(p =>
+        (p.name        ?? '').toLowerCase().includes(q) ||
+        (p.description ?? '').toLowerCase().includes(q) ||
+        (p.category    ?? '').toLowerCase().includes(q) ||
+        (p.sku         ?? '').toLowerCase().includes(q)
+      )
+    }
+    return list
   }
 
-  renderGrid('all')
+  function renderPagination(total, page, totalPages) {
+    const pager = container.querySelector('#catalog-pagination')
+    if (!pager) return
+    if (totalPages <= 1) { pager.innerHTML = ''; return }
+    const start = (page - 1) * PER_PAGE + 1
+    const end   = Math.min(page * PER_PAGE, total)
+    pager.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:16px 0 100px;">
+        <button class="btn btn--ghost btn--sm" id="pg-prev" ${page <= 1 ? 'disabled' : ''}>← Anterior</button>
+        <span style="font-size:13px;color:var(--color-text-muted);">${start}–${end} de ${total}</span>
+        <button class="btn btn--ghost btn--sm" id="pg-next" ${page >= totalPages ? 'disabled' : ''}>Siguiente →</button>
+      </div>`
+    pager.querySelector('#pg-prev')?.addEventListener('click', () => {
+      currentPage--; renderGrid()
+      container.querySelector('#catalog-search').scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+    pager.querySelector('#pg-next')?.addEventListener('click', () => {
+      currentPage++; renderGrid()
+      container.querySelector('#catalog-search').scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }
+
+  function renderGrid() {
+    const filtered   = getFiltered()
+    const totalPages = Math.ceil(filtered.length / PER_PAGE) || 1
+    const page       = Math.min(currentPage, totalPages)
+    const slice      = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE)
+    grid.innerHTML   = ''
+    if (!slice.length) {
+      grid.innerHTML = `<p style="grid-column:1/-1;text-align:center;padding:48px;
+        color:var(--color-text-muted);">Sin resultados para "${searchQuery}"</p>`
+    } else {
+      slice.forEach(p => grid.appendChild(ProductCard(p, (product) => modal.open(product), currency)))
+    }
+    renderPagination(filtered.length, page, totalPages)
+  }
+
+  renderGrid()
+
+  searchInput.addEventListener('input', () => {
+    searchQuery = searchInput.value.trim()
+    currentPage = 1
+    renderGrid()
+  })
 
   // Category tabs
   if (hasCategories) {
@@ -79,7 +142,8 @@ export async function CatalogPage(container) {
       container.querySelectorAll('.category-tab').forEach(b => b.classList.remove('category-tab--active'))
       btn.classList.add('category-tab--active')
       activeCategory = btn.dataset.cat
-      renderGrid(activeCategory)
+      currentPage    = 1
+      renderGrid()
     })
   }
 
