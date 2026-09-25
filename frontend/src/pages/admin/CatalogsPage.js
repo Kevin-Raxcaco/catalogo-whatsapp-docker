@@ -56,7 +56,7 @@ export async function CatalogsPage(container) {
         <div>
           <div class="catalog-card__stat-label">Actualizado</div>
           <div class="catalog-card__stat-value" style="font-size:13px;">
-            ${(() => { const d = new Date((cat.updated ?? '').replace(' ', 'T')); return isNaN(d) ? '—' : d.toLocaleDateString('es', { day: 'numeric', month: 'short' }) })()}
+            ${(() => { const raw = (cat.updated ?? '').replace(' ', 'T').replace(/(\.\d+)$/, '$1Z').replace(/Z+$/, 'Z'); const d = new Date(raw); return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('es', { day: 'numeric', month: 'short' }) })()}
           </div>
         </div>
       </div>
