@@ -359,6 +359,9 @@ function renderDetail(container, catalog, products) {
       const badge = container.querySelector('.badge.badge--active, .badge.badge--draft')
       badge.className = `badge ${newStatus === 'active' ? 'badge--active' : 'badge--draft'}`
       badge.textContent = newStatus === 'active' ? 'Activo' : 'Borrador'
+      // Sync settings form select
+      const statusSelect = container.querySelector('#s-status')
+      if (statusSelect) statusSelect.value = newStatus
     } catch { /* ignore */ }
     e.target.disabled = false
   })
