@@ -73,11 +73,8 @@ export class ProductModal {
     this._el.querySelector('#pm-name').textContent = product.name
 
     const priceEl = this._el.querySelector('#pm-price')
-    if (product.price) {
-      priceEl.innerHTML = `<span style="font-size:11px;font-weight:500;color:var(--color-text-muted);display:block;margin-bottom:2px;">Precio</span>${formatPrice(product.price, this._currency)} c/IVA`
-    } else {
-      priceEl.textContent = ''
-    }
+    priceEl.textContent = product.price
+      ? `${formatPrice(product.price, this._currency)} c/IVA` : ''
 
     const descEl = this._el.querySelector('#pm-desc')
     if (product.description) {
