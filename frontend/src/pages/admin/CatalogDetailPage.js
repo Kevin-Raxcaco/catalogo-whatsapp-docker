@@ -913,11 +913,11 @@ async function renderLogsTab(el, catalogId) {
           const idx    = btn.dataset.logIdx
           const detail = content.querySelector(`#log-detail-${idx}`)
           if (!detail) return
-          const open = detail.style.display === 'none' || !detail.style.display
-          detail.style.display = open ? '' : 'none'
-          btn.textContent = open
-            ? `${currentLogs[idx]?.items_count ?? ''} ▲`
-            : `${currentLogs[idx]?.items_count ?? ''} ver →`
+          const isOpen = detail.style.display !== 'none'
+          detail.style.display = isOpen ? 'none' : ''
+          btn.textContent = isOpen
+            ? `${currentLogs[idx]?.items_count ?? ''} ver →`
+            : `${currentLogs[idx]?.items_count ?? ''} ▲`
         })
       })
 
