@@ -22,6 +22,19 @@ export async function CatalogPage(container) {
     return
   }
 
+  if (catalog.status !== 'active') {
+    container.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
+        min-height:60vh;padding:32px;text-align:center;">
+        <div style="font-size:48px;margin-bottom:16px;">🔒</div>
+        <h2 style="margin:0 0 8px;">Catálogo no disponible</h2>
+        <p style="color:var(--color-text-muted);font-size:14px;margin:0;">
+          Este catálogo no está disponible en este momento.
+        </p>
+      </div>`
+    return
+  }
+
   // Restaurar carrito de sesión anterior
   initCart(catalog.id, catalog.field_config?.abandoned_timeout_min)
 
