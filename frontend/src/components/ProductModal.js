@@ -70,16 +70,25 @@ export class ProductModal {
       : ''
 
     // Nombre, precio, descripción, SKU
-    this._el.querySelector('#pm-name').textContent  = product.name
-    this._el.querySelector('#pm-price').textContent = product.price
-      ? `${formatPrice(product.price, this._currency)} c/IVA` : ''
+    this._el.querySelector('#pm-name').textContent = product.name
+
+    const priceEl = this._el.querySelector('#pm-price')
+    if (product.price) {
+      priceEl.innerHTML = `<span style="font-size:11px;font-weight:500;color:var(--color-text-muted);display:block;margin-bottom:2px;">Precio</span>${formatPrice(product.price, this._currency)} c/IVA`
+    } else {
+      priceEl.textContent = ''
+    }
 
     const descEl = this._el.querySelector('#pm-desc')
-    descEl.textContent = product.description ?? ''
-    descEl.hidden = !product.description
+    if (product.description) {
+      descEl.innerHTML = `<span style="font-size:11px;font-weight:500;color:var(--color-text-muted);display:block;margin-bottom:2px;">Descripción</span>${product.description}`
+      descEl.hidden = false
+    } else {
+      descEl.hidden = true
+    }
 
-    this._el.querySelector('#pm-sku').textContent = product.sku
-      ? `SKU: ${product.sku}` : ''
+    const skuEl = this._el.querySelector('#pm-sku')
+    skuEl.textContent = product.sku ? `SKU: ${product.sku}` : ''
 
     // Extras — campos adicionales del producto en grid
     const extras = product.extras && typeof product.extras === 'object' ? product.extras : {}
