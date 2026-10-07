@@ -200,7 +200,7 @@ function renderNewCatalogForm(container) {
           <div>
             <p class="section-label" style="margin-bottom:2px;">Integración Atom</p>
             <p style="font-size:13px;color:var(--color-text-muted);margin:0;">
-              Opcional — configura cómo se actualiza el cliente en Atom.
+              Requerido — necesario para enviar los datos del carrito a los campos del cliente en Atom.
             </p>
           </div>
 
