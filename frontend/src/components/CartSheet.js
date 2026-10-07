@@ -64,7 +64,7 @@ export class CartSheet {
             Continuar por WhatsApp
           </button>
           <p class="cart-sheet__hint" id="cs-hint">
-            Se abrirá WhatsApp con el resumen de tu pedido listo para enviar.
+            Tu agente de WhatsApp recibirá tu selección y continuará la conversación contigo.
           </p>
         </div>
       </div>
